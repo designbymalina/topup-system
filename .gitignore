@@ -1,0 +1,46 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Java / Maven
+target/
+backend/target/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IntelliJ / Eclipse / Java
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+
+# Local environment / secrets
+/backend/src/main/resources/application.properties
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local documents
+/__Dokumenty/

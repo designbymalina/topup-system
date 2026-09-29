@@ -1,0 +1,32 @@
+# Default
+/mvnw text eol=lf
+*.cmd text eol=crlf
+
+# Treat text files as text and normalize line endings
+* text=auto
+
+# Java
+*.java text
+
+# TypeScript / JavaScript
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+
+# Web
+*.html text
+*.css text
+*.scss text
+
+# Configuration / documentation
+*.properties text
+*.xml text
+*.json text
+*.yml text
+*.yaml text
+*.md text
+
+# Git configuration
+*.gitattributes text
+*.gitignore text

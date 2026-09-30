@@ -17,15 +17,17 @@ public class ApiController {
   @GetMapping
   public Map<String, Object> index() {
     Map<String, String> endpoints = new LinkedHashMap<>();
+
     endpoints.put("simCards", "/api/sim-cards");
     endpoints.put("customers", "/api/customers");
-    // "topUps", "/api/top-ups",
-    // "packages", "/api/packages"
+    endpoints.put("topUps", "/api/top-ups");
 
     Map<String, Object> response = new LinkedHashMap<>();
+
     response.put("name", "Prepaid Top-Up & Billing System API");
     response.put("version", "1.0.0");
     response.put("endpoints", endpoints);
+
     // response.put("documentation", "/api/docs"); // NOTE: Swagger/OpenAPI
 
     return response;

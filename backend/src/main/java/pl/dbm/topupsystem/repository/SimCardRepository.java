@@ -8,4 +8,6 @@ public interface SimCardRepository extends JpaRepository<SimCard, Long> {
   Optional<SimCard> findByPhoneNumber(String phoneNumber);
 
   boolean existsByPhoneNumber(String phoneNumber);
+
+  boolean existsByCustomerId(Long customerId);
 }

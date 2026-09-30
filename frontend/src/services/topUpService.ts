@@ -1,3 +1,5 @@
+import { apiFetch } from './api'
+
 import type { TopUp } from '../types/TopUp'
 
 export type CreateTopUpRequest = {
@@ -9,48 +11,40 @@ export type PublicTopUpRequest = {
   amount: number
 }
 
-type ApiErrorResponse = {
-  status: number
-  message?: string
-  errors?: Record<string, string>
-}
-
-const API_URL = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-
-async function handleApiError(
-  response: Response,
-): Promise<never> {
-  const error: ApiErrorResponse = await response.json()
-
-  const validationMessage = error.errors
-    ? Object.values(error.errors)[0]
-    : null
-
-  throw new Error(
-    validationMessage ??
-    error.message ??
-    'Nie udało się wykonać doładowania.',
+export async function getTopUps(
+  simCardId: number,
+): Promise<TopUp[]> {
+  return apiFetch<TopUp[]>(
+    `/api/sim-cards/${simCardId}/top-ups`,
   )
 }
 
-export async function getTopUps(simCardId: number): Promise<TopUp[]> {
-  const response = await fetch(
-    `${API_URL}/api/sim-cards/${simCardId}/top-ups`,
+export async function getAllTopUps(): Promise<TopUp[]> {
+  const simCards = await apiFetch<{ id: number }[]>(
+    '/api/sim-cards',
   )
 
-  if (!response.ok) {
-    await handleApiError(response)
-  }
+  const topUpsBySimCard = await Promise.all(
+    simCards.map((simCard) =>
+      getTopUps(simCard.id),
+    ),
+  )
 
-  return response.json()
+  return topUpsBySimCard
+    .flat()
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime(),
+    )
 }
 
 export async function createTopUp(
   simCardId: number,
   request: CreateTopUpRequest,
 ): Promise<TopUp> {
-  const response = await fetch(
-    `${API_URL}/api/sim-cards/${simCardId}/top-ups`,
+  return apiFetch<TopUp>(
+    `/api/sim-cards/${simCardId}/top-ups`,
     {
       method: 'POST',
       headers: {
@@ -59,31 +53,22 @@ export async function createTopUp(
       body: JSON.stringify(request),
     },
   )
-
-  if (!response.ok) {
-    await handleApiError(response)
-  }
-
-  return response.json()
 }
 
 export async function createPublicTopUp(
   request: PublicTopUpRequest,
 ): Promise<TopUp> {
-  const response = await fetch(
-    `${API_URL}/api/top-ups`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
+  return apiFetch<TopUp>('/api/top-ups', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify(request),
+  })
+}
 
-  if (!response.ok) {
-    await handleApiError(response)
-  }
-
-  return response.json()
+export async function deleteTopUp(id: number): Promise<void> {
+  await apiFetch<void>(`/api/top-ups/${id}`, {
+    method: 'DELETE',
+  })
 }

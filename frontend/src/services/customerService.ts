@@ -1,66 +1,41 @@
+import { apiFetch } from './api'
+
 import type {
   CreateCustomerRequest,
   Customer,
-  ValidationErrorResponse,
 } from '../types/Customer'
 
-const API_URL = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-
 export async function getCustomers(): Promise<Customer[]> {
-  const response = await fetch(`${API_URL}/api/customers`)
-
-  if (!response.ok) {
-    throw new Error(`HTTP error: ${response.status}`)
-  }
-
-  return response.json()
+  return apiFetch<Customer[]>('/api/customers')
 }
 
 export async function createCustomer(
-  customer: CreateCustomerRequest
+  customer: CreateCustomerRequest,
 ): Promise<Customer> {
-  const response = await fetch(`${API_URL}/api/customers`, {
+  return apiFetch<Customer>('/api/customers', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(customer),
   })
-
-  if (!response.ok) {
-    const error: ValidationErrorResponse = await response.json()
-    throw error
-  }
-
-  return response.json()
 }
 
 export async function updateCustomer(
   id: number,
-  customer: CreateCustomerRequest
+  customer: CreateCustomerRequest,
 ): Promise<Customer> {
-  const response = await fetch(`${API_URL}/api/customers/${id}`, {
+  return apiFetch<Customer>(`/api/customers/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(customer),
   })
-
-  if (!response.ok) {
-    const error: ValidationErrorResponse = await response.json()
-    throw error
-  }
-
-  return response.json()
 }
 
 export async function deleteCustomer(id: number): Promise<void> {
-  const response = await fetch(`${API_URL}/api/customers/${id}`, {
+  await apiFetch<void>(`/api/customers/${id}`, {
     method: 'DELETE',
   })
-
-  if (!response.ok) {
-    throw new Error(`HTTP error: ${response.status}`)
-  }
 }

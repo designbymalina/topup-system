@@ -11,11 +11,11 @@ import type {
 
 function CustomerForm({
   customer,
-  onCreated,
+  onSaved,
   onCancel,
 }: {
   customer?: Customer
-  onCreated: () => void
+  onSaved: () => void
   onCancel: () => void
 }) {
   const [firstName, setFirstName] = useState('')
@@ -79,7 +79,7 @@ function CustomerForm({
         await createCustomer(request)
       }
 
-      onCreated()
+      onSaved()
     } catch (error) {
       if (
         typeof error === 'object' &&

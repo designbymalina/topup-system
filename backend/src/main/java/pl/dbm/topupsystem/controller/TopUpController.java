@@ -2,12 +2,7 @@ package pl.dbm.topupsystem.controller;
 
 import jakarta.validation.Valid;
 import java.util.List;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import pl.dbm.topupsystem.dto.PublicTopUpRequest;
 import pl.dbm.topupsystem.dto.TopUpRequest;
 import pl.dbm.topupsystem.entity.TopUp;
@@ -35,5 +30,10 @@ public class TopUpController {
   @PostMapping("/top-ups")
   public TopUp createPublic(@Valid @RequestBody PublicTopUpRequest request) {
     return topUpService.createPublic(request.getPhoneNumber(), request.getAmount());
+  }
+
+  @DeleteMapping("/top-ups/{id}")
+  public void delete(@PathVariable Long id) {
+    topUpService.delete(id);
   }
 }

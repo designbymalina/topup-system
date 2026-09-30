@@ -73,4 +73,10 @@ public class TopUpService {
 
     return topUpRepository.save(topUp);
   }
+
+  public void delete(Long id) {
+    TopUp topup = topUpRepository.findById(id).orElseThrow();
+
+    topUpRepository.delete(topup);
+  }
 }

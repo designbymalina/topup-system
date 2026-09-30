@@ -4,15 +4,20 @@ import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import pl.dbm.topupsystem.entity.Customer;
+import pl.dbm.topupsystem.exception.CustomerHasSimCardsException;
 import pl.dbm.topupsystem.repository.CustomerRepository;
+import pl.dbm.topupsystem.repository.SimCardRepository;
 
 @Service
 public class CustomerService {
 
   private final CustomerRepository customerRepository;
+  private final SimCardRepository simCardRepository;
 
-  public CustomerService(CustomerRepository customerRepository) {
+  public CustomerService(
+      CustomerRepository customerRepository, SimCardRepository simCardRepository) {
     this.customerRepository = customerRepository;
+    this.simCardRepository = simCardRepository;
   }
 
   public List<Customer> findAll() {
@@ -39,6 +44,11 @@ public class CustomerService {
 
   public void delete(Long id) {
     Customer customer = customerRepository.findById(id).orElseThrow();
+
+    if (simCardRepository.existsByCustomerId(id)) {
+      throw new CustomerHasSimCardsException(
+          "Nie można usunąć klienta, ponieważ jest przypisany do jednej lub więcej kart SIM.");
+    }
 
     customerRepository.delete(customer);
   }

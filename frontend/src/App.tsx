@@ -7,6 +7,8 @@ import SimCards from './pages/SimCards'
 import Customers from './pages/Customers'
 import TopUps from './pages/TopUps'
 import SimCardTopUps from './pages/SimCardTopUps'
+import Login from './pages/Login'
+import RequireAuth from './components/RequireAuth'
 
 function App() {
   return (
@@ -15,11 +17,15 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/sim-cards" element={<SimCards />} />
-        <Route path="/admin/customers" element={<Customers />} />
-        <Route path="/admin/top-ups" element={<TopUps />} />
-        <Route path="/admin/sim-cards/:id/top-ups" element={<SimCardTopUps />} />
+        <Route path="/login" element={<Login />} />
+
+        <Route element={<RequireAuth />}>
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/sim-cards" element={<SimCards />} />
+          <Route path="/admin/customers" element={<Customers />} />
+          <Route path="/admin/top-ups" element={<TopUps />} />
+          <Route path="/admin/sim-cards/:id/top-ups" element={<SimCardTopUps />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.dbm.topupsystem.entity.SimCard;
@@ -24,6 +25,7 @@ import pl.dbm.topupsystem.enums.SimCardStatus;
 import pl.dbm.topupsystem.service.CustomerService;
 import pl.dbm.topupsystem.service.SimCardService;
 
+@WithMockUser(roles = "ADMIN")
 @WebMvcTest(SimCardController.class)
 class SimCardControllerTest {
 

@@ -1,62 +1,92 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { deleteSimCard, getSimCards } from '../services/simCardService'
 import SimCardForm from '../form/SimCardForm'
 import Alert from '../components/Alert'
 import ConfirmModal from '../components/ConfirmModal'
-import { Loading } from '../components/Loading'
+import Loading from '../components/Loading'
 
 import type { SimCard } from '../types/SimCard'
 
 function SimCards() {
   const [simCards, setSimCards] = useState<SimCard[]>([])
-  const [error, setError] = useState(false)
-  const [success, setSuccess] = useState('')
+  const [alert, setAlert] = useState<{
+    type: 'success' | 'danger'
+    message: string
+  } | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingSimCard, setEditingSimCard] = useState<SimCard | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedSimCardId, setSelectedSimCardId] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
+
   const navigate = useNavigate()
 
   async function loadSimCards() {
+    setLoading(true)
+    setLoadError(null)
+
     try {
       const data = await getSimCards()
       setSimCards(data)
-    } catch {
-      setError(true)
+    } catch (error) {
+      console.error(error)
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Nie udało się pobrać listy kart SIM.',
+      )
+    } finally {
+      setLoading(false)
     }
   }
+
+  useEffect(() => {
+    void loadSimCards()
+  }, [])
 
   async function handleSimCardSubmit() {
     const message = editingSimCard
       ? 'Karta SIM została pomyślnie zaktualizowana.'
-      : 'SIM card has been successfully registered.'
+      : 'Karta SIM została pomyślnie zarejestrowana.'
 
     setShowForm(false)
     setEditingSimCard(null)
-    await loadSimCards()
-    setSuccess(message)
-  }
 
-  useEffect(() => {
-    loadSimCards()
-    setLoading(false)
-  }, [])
+    await loadSimCards()
+
+    setAlert({
+      type: 'success',
+      message,
+    })
+  }
 
   async function handleDelete(id: number) {
     try {
       await deleteSimCard(id)
-      await loadSimCards()
 
       setShowDeleteModal(false)
       setSelectedSimCardId(null)
-      setSuccess('Karta SIM została pomyślnie usunięta.')
-    } catch {
+
+      await loadSimCards()
+
+      setAlert({
+        type: 'success',
+        message: 'Karta SIM została pomyślnie usunięta.',
+      })
+    } catch (error) {
       setShowDeleteModal(false)
       setSelectedSimCardId(null)
-      setError(true)
+
+      setAlert({
+        type: 'danger',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Nie udało się usunąć karty SIM.',
+      })
     }
   }
 
@@ -65,11 +95,10 @@ function SimCards() {
     setEditingSimCard(null)
   }
 
-  // TODO: Docelowo przenieść wyżej, np. do App.
-  if (error) {
+  if (loadError) {
     return (
       <main className="container">
-        <Alert type="danger" message="Unable to connect to the server. Please try again later." />
+        <Alert type="danger" message={loadError} />
       </main>
     )
   }
@@ -80,13 +109,13 @@ function SimCards() {
         <div>
           <h1 className="h2 fw-bold text-dark mb-1">Karty SIM</h1>
           <p className="text-muted small mb-0">
-            <Link
-              to="/admin"
-              className="link-dark text-decoration-none"
-            >Panel Administracyjny</Link>
-            {` / `}Karty SIM
+            <Link to="/admin" className="link-dark text-decoration-none">
+              Panel Administracyjny
+            </Link>
+            {' / '}Karty SIM
           </p>
         </div>
+
         <div className="d-flex gap-2">
           <button
             type="button"
@@ -94,13 +123,20 @@ function SimCards() {
             onClick={() => {
               setEditingSimCard(null)
               setShowForm(true)
-              setSuccess('')
-            }}>Karta SIM</button>
+              setAlert(null)
+            }}
+          >
+            Karta SIM
+          </button>
         </div>
       </div>
 
-      {success && (
-        <Alert type="success" message={success} onClose={() => setSuccess('')} />
+      {alert && (
+        <Alert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
       )}
 
       {showForm && (
@@ -118,11 +154,9 @@ function SimCards() {
         </div>
       )}
 
-      {loading && (
-        <Loading message="Ładowanie listy..." />
-      )}
+      {loading && <Loading message="Ładowanie listy kart SIM..." />}
 
-      {!showForm && (
+      {!loading && !showForm && (
         <div className="table-container">
           <table className="table table-striped">
             <thead>
@@ -133,11 +167,13 @@ function SimCards() {
               <th>Status</th>
               <th>Ważne do</th>
               <th>Klient / użytkownik</th>
-              <th className="text-end" style={{ maxWidth: '10%' }}>Akcja</th>
+              <th className="text-end" style={{ maxWidth: '10%' }}>
+                Akcja
+              </th>
             </tr>
             </thead>
             <tbody>
-            {simCards.map(simCard => (
+            {simCards.map((simCard) => (
               <tr key={simCard.id}>
                 <td>{simCard.id}</td>
                 <td>{simCard.phoneNumber}</td>
@@ -147,29 +183,39 @@ function SimCards() {
                 <td className="table-success">
                   {simCard.customer
                     ? `${simCard.customer.firstName} ${simCard.customer.lastName}`
-                    : '-'}
+                    : 'Brak przypisanego klienta'}
                 </td>
                 <td className="text-end">
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary me-2"
-                    onClick={() => navigate(`/admin/sim-cards/${simCard.id}/top-ups`)}
-                  >Historia</button>
+                    onClick={() =>
+                      navigate(`/admin/sim-cards/${simCard.id}/top-ups`)
+                    }
+                  >
+                    Historia
+                  </button>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-primary me-2"
                     onClick={() => {
                       setEditingSimCard(simCard)
                       setShowForm(true)
-                      setSuccess('')
-                    }}>Edytuj</button>
+                      setAlert(null)
+                    }}
+                  >
+                    Edytuj
+                  </button>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-danger"
                     onClick={() => {
                       setSelectedSimCardId(simCard.id)
                       setShowDeleteModal(true)
-                    }}>Usuń</button>
+                    }}
+                  >
+                    Usuń
+                  </button>
                 </td>
               </tr>
             ))}
@@ -190,7 +236,7 @@ function SimCards() {
           }}
           onConfirm={() => {
             if (selectedSimCardId !== null) {
-              handleDelete(selectedSimCardId)
+              void handleDelete(selectedSimCardId)
             }
           }}
         />

@@ -61,4 +61,15 @@ public class ValidationExceptionHandler {
 
     return response;
   }
+
+  @ExceptionHandler(CustomerHasSimCardsException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public Map<String, Object> handleCustomerHasSimCards(CustomerHasSimCardsException exception) {
+    Map<String, Object> response = new HashMap<>();
+
+    response.put("status", 409);
+    response.put("message", exception.getMessage());
+
+    return response;
+  }
 }

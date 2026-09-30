@@ -16,6 +16,7 @@ public class HomeController {
   @GetMapping("/")
   public String home(Model model) {
     model.addAttribute("systemName", "Prepaid Top-Up & Billing System");
+    model.addAttribute("systemDescription", "Hello from Thymeleaf!");
 
     return "home";
   }

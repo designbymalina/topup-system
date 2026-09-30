@@ -6,12 +6,12 @@
         services are intentionally stored as constructor-injected dependencies.
     -->
     <Match>
-        <Bug code="EI_EXPOSE_REP2"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
         <Class name="pl.dbm.topupsystem.controller.CustomerController"/>
     </Match>
 
     <Match>
-        <Bug code="EI_EXPOSE_REP2"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
         <Class name="pl.dbm.topupsystem.controller.SimCardController"/>
     </Match>
 
@@ -20,27 +20,32 @@
         mutable entity references are intentional.
     -->
     <Match>
-        <Bug code="EI_EXPOSE_REP"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
         <Class name="pl.dbm.topupsystem.entity.SimCard"/>
         <Method name="getCustomer" />
     </Match>
 
     <Match>
-        <Bug code="EI_EXPOSE_REP2"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
         <Class name="pl.dbm.topupsystem.entity.SimCard"/>
         <Method name="setCustomer" />
     </Match>
 
     <Match>
-        <Bug code="EI_EXPOSE_REP"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
         <Class name="pl.dbm.topupsystem.entity.TopUp"/>
         <Method name="getSimCard" />
     </Match>
 
     <Match>
-        <Bug code="EI_EXPOSE_REP2"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
         <Class name="pl.dbm.topupsystem.entity.TopUp"/>
         <Method name="setSimCard" />
+    </Match>
+
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="pl.dbm.topupsystem.controller.TopUpController"/>
     </Match>
 
 </FindBugsFilter>

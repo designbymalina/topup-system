@@ -5,41 +5,59 @@ import { deleteCustomer, getCustomers } from '../services/customerService'
 import CustomerForm from '../form/CustomerForm'
 import Alert from '../components/Alert'
 import ConfirmModal from '../components/ConfirmModal'
+import Loading from '../components/Loading'
 
 import type { Customer } from '../types/Customer'
 
 function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [error, setError] = useState(false)
-  const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [alert, setAlert] = useState<{
+    type: 'success' | 'danger'
+    message: string
+  } | null>(null)
+
   const [showForm, setShowForm] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null,
+  )
 
   async function loadCustomers() {
+    setLoading(true)
+    setLoadError(null)
+
     try {
       const data = await getCustomers()
       setCustomers(data)
-    } catch {
-      setError(true)
+    } catch (error) {
+      console.error(error)
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Nie udało się pobrać listy klientów.',
+      )
+    } finally {
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadCustomers()
+    void loadCustomers()
   }, [])
 
   function handleAddCustomer() {
     setEditingCustomer(null)
     setShowForm(true)
-    setSuccess('')
+    setAlert(null)
   }
 
   function handleEditCustomer(customer: Customer) {
     setEditingCustomer(customer)
     setShowForm(true)
-    setSuccess('')
+    setAlert(null)
   }
 
   async function handleCustomerSaved() {
@@ -50,11 +68,12 @@ function Customers() {
 
     await loadCustomers()
 
-    setSuccess(
-      wasEditing
+    setAlert({
+      type: 'success',
+      message: wasEditing
         ? 'Dane klienta zostały pomyślnie zaktualizowane.'
-        : 'Klient został pomyślnie dodany.'
-    )
+        : 'Klient został pomyślnie dodany.',
+    })
   }
 
   function handleCancel() {
@@ -80,9 +99,21 @@ function Customers() {
 
       await loadCustomers()
 
-      setSuccess('Klient został pomyślnie usunięty.')
-    } catch {
-      setError(true)
+      setAlert({
+        type: 'success',
+        message: 'Klient został pomyślnie usunięty.',
+      })
+    } catch (error) {
+      setShowDeleteModal(false)
+      setSelectedCustomerId(null)
+
+      setAlert({
+        type: 'danger',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Nie udało się usunąć klienta.',
+      })
     }
   }
 
@@ -91,11 +122,10 @@ function Customers() {
     setSelectedCustomerId(null)
   }
 
-  // TODO: Docelowo przenieść wyżej, np. do App.
-  if (error) {
+  if (loadError) {
     return (
       <main className="container">
-        <Alert type="danger" message="Unable to connect to the server. Please try again later." />
+        <Alert type="danger" message={loadError} />
       </main>
     )
   }
@@ -106,69 +136,70 @@ function Customers() {
         <div>
           <h1 className="h2 fw-bold text-dark mb-1">Klienci i użytkownicy</h1>
           <p className="text-muted small mb-0">
-            <Link
-              to="/admin"
-              className="link-dark text-decoration-none"
-            >Panel Administracyjny</Link>
-            {` / `}Klienci i użytkownicy
+            <Link to="/admin" className="link-dark text-decoration-none">
+              Panel Administracyjny
+            </Link>
+            {' / '}Klienci i użytkownicy
           </p>
         </div>
-        <div className="d-flex gap-2">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleAddCustomer}
-          >Klient</button>
-        </div>
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleAddCustomer}
+        >
+          Klient
+        </button>
       </div>
 
-      {success && (
+      {alert && (
         <Alert
-          type="success"
-          message={success}
-          onClose={() => setSuccess('')}
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
         />
       )}
 
       {showForm && (
         <div className="card mb-4">
-          <div className="card-header">
-            {editingCustomer ? 'Edytuj klienta' : 'Dodaj klienta'}
+          <div className="card-header fw-bold">
+            {editingCustomer ? 'Edytuj klienta' : 'Rejestracja klienta'}
           </div>
-
           <div className="card-body">
             <CustomerForm
               customer={editingCustomer ?? undefined}
-              onCreated={handleCustomerSaved}
+              onSaved={handleCustomerSaved}
               onCancel={handleCancel}
             />
           </div>
         </div>
       )}
 
-      {!showForm && (
-      <div className="table-container">
-        <table className="table table-striped">
-          <thead>
+      {loading && <Loading message="Ładowanie listy klientów..." />}
+
+      {!loading && !showForm && customers.length === 0 && (
+        <Alert type="info" message="Brak klientów." />
+      )}
+
+      {!loading && !showForm && customers.length > 0 && (
+        <div className="table-responsive">
+          <table className="table table-striped">
+            <thead>
             <tr className="table-primary">
               <th>ID</th>
               <th>Imię</th>
               <th>Nazwisko</th>
-              <th>Numer PESEL</th>
-              <th className="text-end" style={{ maxWidth: '10%' }}>
-                Akcje
-              </th>
+              <th>PESEL</th>
+              <th className="text-end">Akcja</th>
             </tr>
-          </thead>
-
-          <tbody>
-            {customers.map(customer => (
+            </thead>
+            <tbody>
+            {customers.map((customer) => (
               <tr key={customer.id}>
                 <td>{customer.id}</td>
                 <td>{customer.firstName}</td>
                 <td>{customer.lastName}</td>
                 <td>{customer.pesel}</td>
-
                 <td className="text-end">
                   <button
                     type="button"
@@ -177,7 +208,6 @@ function Customers() {
                   >
                     Edytuj
                   </button>
-
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-danger"
@@ -188,9 +218,9 @@ function Customers() {
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showDeleteModal && (
@@ -199,15 +229,8 @@ function Customers() {
           message="Czy na pewno chcesz usunąć tego klienta?"
           confirmLabel="Usuń"
           cancelLabel="Anuluj"
-          onCancel={() => {
-            setShowDeleteModal(false)
-            setSelectedCustomerId(null)
-          }}
-          onConfirm={() => {
-            if (selectedCustomerId !== null) {
-              confirmDelete()
-            }
-          }}
+          onCancel={cancelDelete}
+          onConfirm={() => void confirmDelete()}
         />
       )}
     </main>

@@ -1,43 +1,70 @@
 # Prepaid Top-Up & Billing System
 
-A modular web application for managing prepaid SIM cards, customers and top-up transactions.
+Backend-focused business application built with **Java 21 and Spring Boot**, with a React + TypeScript frontend.
 
-The project was created as a practical full-stack Java/Spring Boot application with React and TypeScript. It focuses on REST API design, persistence, validation, transaction handling and automated testing.
+The project simulates a prepaid telecommunications system where customers can be assigned SIM cards and perform prepaid top-ups.
 
-## Features
+The main focus of the project is **backend development, REST API design, persistence, validation, transaction handling and automated testing**.
 
-### Administration
+---
 
-* Dashboard
-* Customer management
+## Overview
+
+The application is developed as a **modular monolith** with a clear separation between the backend and frontend.
+
+### Domain model
+
+```text
+Customer
+   │
+   └── 1:N → SimCard
+                │
+                └── 1:N → TopUp
+```
+
+### Main functionality
+
+* customer management
 * SIM card management
-* Assigning SIM cards to customers
+* assigning customers to SIM cards
 * SIM card status management
-* SIM card top-up history
-* Overview of all top-up transactions
-* Create, update and delete operations
-* Validation and error handling
+* balance management
+* prepaid top-ups
+* top-up history
+* public quick top-up
+* validation of incoming API requests
+* business exception handling
+* transactional top-up processing
+* automated backend tests
 
-### Public
+---
 
-* Quick prepaid top-up
-* Phone number validation
-* Top-up amount validation
-* Support for active/inactive SIM cards
-* Success and error messages
+## Technology Stack
 
 ### Backend
 
-* REST API
-* Spring Boot
+* **Java 21**
+* **Spring Boot 4.1.1**
+* Spring Web
 * Spring Data JPA
 * Hibernate
+* Bean Validation
 * PostgreSQL
-* DTO-based request validation
-* Centralized exception handling
-* Transaction management
-* Unique phone number constraint
-* CORS configuration
+* Maven
+
+### Testing
+
+* JUnit
+* Mockito
+* Spring MVC Test
+* Spring Boot Test
+* integration testing
+
+### Code Quality
+
+* Spotless
+* Google Java Format
+* SpotBugs
 
 ### Frontend
 
@@ -46,53 +73,164 @@ The project was created as a practical full-stack Java/Spring Boot application w
 * Vite
 * React Router
 * Bootstrap
-* Reusable components
-* API service layer
-* Form validation
-* Loading and error states
-
----
-
-## Technology Stack
-
-### Backend
-
-* Java 21
-* Spring Boot 4.1.1
-* Spring Web
-* Spring Data JPA
-* Hibernate
-* Spring Validation
-* Thymeleaf
-* PostgreSQL
-* Maven
-
-### Frontend
-
-* React
-* TypeScript
-* Vite
-* React Router
-* Bootstrap 5
-
-### Testing and code quality
-
-* JUnit
-* Mockito
-* Spring Boot Test
-* Spring MVC Test
-* Spotless
-* SpotBugs
 
 ---
 
 ## Architecture
 
-The application is structured as a modular monolith.
+The application follows a layered architecture:
+
+```text
+REST Controller
+      ↓
+Service Layer
+      ↓
+Repository Layer
+      ↓
+JPA / Hibernate
+      ↓
+PostgreSQL
+```
+
+The frontend communicates with the backend through the REST API:
+
+```text
+React / TypeScript
+        ↓
+    REST API
+        ↓
+Spring Boot
+        ↓
+PostgreSQL
+```
+
+The backend is the main focus of the project. The frontend provides the administrative interface and public top-up functionality.
+
+---
+
+## REST API
+
+Current API endpoints include:
+
+### Customers
+
+```text
+GET    /api/customers
+POST   /api/customers
+PUT    /api/customers/{id}
+DELETE /api/customers/{id}
+```
+
+### SIM Cards
+
+```text
+GET    /api/sim-cards
+POST   /api/sim-cards
+PUT    /api/sim-cards/{id}
+DELETE /api/sim-cards/{id}
+```
+
+### Top-ups
+
+```text
+GET  /api/sim-cards/{id}/top-ups
+POST /api/sim-cards/{id}/top-ups
+POST /api/top-ups
+```
+
+The last endpoint provides the public quick top-up functionality.
+
+---
+
+## Validation and Error Handling
+
+The backend uses Bean Validation for request validation.
+
+Examples include:
+
+* required fields
+* phone number format
+* valid SIM card status
+* non-negative balance
+* valid dates
+* valid top-up amount
+
+Business errors are represented by dedicated exceptions and mapped to appropriate HTTP status codes.
+
+Examples:
+
+```text
+400 Bad Request
+404 Not Found
+409 Conflict
+```
+
+The frontend uses a centralized API layer for HTTP and connection errors.
+
+---
+
+## Transactions
+
+Top-up processing is transactional.
+
+A top-up operation updates:
+
+1. SIM card balance
+2. top-up transaction history
+
+Both operations belong to the same transaction.
+
+If saving the top-up transaction fails, the balance update is rolled back.
+
+This behavior is covered by integration testing.
+
+---
+
+## Testing
+
+The backend contains unit, controller and integration tests.
+
+Current tests cover, among other things:
+
+* service logic
+* REST controllers
+* request validation
+* duplicate phone numbers
+* top-up processing
+* public top-ups
+* top-up history
+* transaction rollback
+
+The project is continuously checked using:
+
+```bash
+./mvnw test
+```
+
+Code formatting:
+
+```bash
+./mvnw spotless:check
+```
+
+Static analysis:
+
+```bash
+./mvnw spotbugs:check
+```
+
+Full verification:
+
+```bash
+./mvnw clean verify
+```
+
+---
+
+## Project Structure
 
 ```text
 topup-system/
-│
 ├── backend/
 │   ├── src/
 │   │   ├── main/
@@ -106,269 +244,48 @@ topup-system/
 │   │   │   │       ├── exception/
 │   │   │   │       ├── repository/
 │   │   │   │       └── service/
-│   │   │   │
 │   │   │   └── resources/
-│   │   │       └── application.example.properties
-│   │   │
 │   │   └── test/
-│   │
-│   ├── pom.xml
-│   ├── mvnw
-│   └── mvnw.cmd
+│   └── pom.xml
 │
-├── frontend/
-│   ├── src/
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── .gitignore
-└── README.md
-```
-
-### Backend flow
-
-```text
-HTTP Request
-     ↓
-Controller
-     ↓
-DTO / Validation
-     ↓
-Service
-     ↓
-Repository
-     ↓
-JPA / Hibernate
-     ↓
-PostgreSQL
-```
-
-The service layer contains the main business logic, while controllers are responsible for handling HTTP requests and responses.
-
----
-
-## Domain Model
-
-The main entities are:
-
-```text
-Customer
-   │
-   │ 1
-   │
-   └─────── * SimCard
-                │
-                │ 1
-                │
-                └─────── * TopUp
-```
-
-A customer can have multiple SIM cards.
-
-A SIM card can have multiple top-up transactions.
-
-Each top-up belongs to exactly one SIM card.
-
-### SIM card statuses
-
-```text
-ACTIVE
-BLOCKED
-DEACTIVATED
-```
-
-Only active SIM cards can be topped up.
-
----
-
-## API
-
-### System
-
-```http
-GET /api
-```
-
-Returns basic API information and available endpoints.
-
-### SIM cards
-
-```http
-GET    /api/sim-cards
-POST   /api/sim-cards
-PUT    /api/sim-cards/{id}
-DELETE /api/sim-cards/{id}
-```
-
-### Customers
-
-```http
-GET    /api/customers
-POST   /api/customers
-PUT    /api/customers/{id}
-DELETE /api/customers/{id}
-```
-
-### Top-ups
-
-```http
-POST /api/sim-cards/{id}/top-ups
-GET  /api/sim-cards/{id}/top-ups
-```
-
-Public quick top-up:
-
-```http
-POST /api/top-ups
-```
-
-Example request:
-
-```json
-{
-  "phoneNumber": "+48123456789",
-  "amount": 30.00
-}
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── form/
+    │   ├── pages/
+    │   ├── services/
+    │   └── types/
+    └── package.json
 ```
 
 ---
 
-## Validation and Error Handling
+## Running the Project
 
-The API validates incoming requests using Jakarta Bean Validation.
+### Backend
 
-Examples include:
-
-* required fields
-* phone number format
-* non-negative SIM balance
-* valid SIM status
-* valid date
-* minimum top-up amount
-
-The API returns appropriate HTTP status codes for common error conditions.
-
-Examples:
-
-```text
-400 Bad Request
-404 Not Found
-409 Conflict
-```
-
-Example duplicate phone number response:
-
-```json
-{
-  "status": 409,
-  "message": "Numer telefonu jest już przypisany do karty SIM."
-}
-```
-
----
-
-## Transactions
-
-Top-up operations are transactional.
-
-A successful top-up:
-
-```text
-1. Find SIM card
-2. Verify SIM status
-3. Increase balance
-4. Save balance
-5. Create top-up transaction
-6. Save transaction
-```
-
-If saving the transaction fails, the transaction is rolled back so that the SIM card balance is not updated independently.
-
----
-
-## Testing
-
-The project contains unit, controller and integration tests.
-
-The test suite covers, among other things:
-
-* service logic
-* REST controllers
-* request validation
-* customer operations
-* SIM card operations
-* top-up operations
-* public top-ups
-* transaction rollback
-* top-up history
-
-Run tests:
-
-```powershell
-.\mvnw clean test
-```
-
----
-
-## Code Quality
-
-The project uses Spotless for Java code formatting and SpotBugs for static analysis.
-
-Check formatting:
-
-```powershell
-.\mvnw spotless:check
-```
-
-Apply formatting:
-
-```powershell
-.\mvnw spotless:apply
-```
-
-Run SpotBugs:
-
-```powershell
-.\mvnw spotbugs:check
-```
-
----
-
-## Running the Backend
-
-### Requirements
+Requirements:
 
 * Java 21
 * PostgreSQL
-* Maven Wrapper included in the repository
 
-Create a PostgreSQL database:
-
-```text
-topup_system
-```
-
-Copy the example configuration:
-
-```text
-backend/src/main/resources/application.example.properties
-```
-
-to:
+Configure the database connection in:
 
 ```text
 backend/src/main/resources/application.properties
 ```
 
-and configure the local PostgreSQL connection.
+An example configuration is available in:
 
-The local `application.properties` file is intentionally excluded from Git because it contains environment-specific configuration.
+```text
+backend/src/main/resources/application.example.properties
+```
 
 Start the backend:
 
-```powershell
+```bash
 cd backend
-.\mvnw spring-boot:run
+./mvnw spring-boot:run
 ```
 
 The backend runs by default on:
@@ -377,20 +294,23 @@ The backend runs by default on:
 http://localhost:8081
 ```
 
----
+### Frontend
 
-## Running the Frontend
+Requirements:
+
+* Node.js
+* npm
 
 Install dependencies:
 
-```powershell
+```bash
 cd frontend
 npm install
 ```
 
 Start the development server:
 
-```powershell
+```bash
 npm run dev
 ```
 
@@ -400,31 +320,46 @@ The frontend runs by default on:
 http://localhost:5173
 ```
 
-The frontend communicates with the backend through the configured `VITE_API_URL`.
+---
+
+## Development Roadmap
+
+The project is intentionally developed incrementally.
+
+Planned backend improvements include:
+
+* Spring Boot Actuator
+* Spring Security
+* authentication and authorization
+* role-based access control
+* security tests
+* audit logging
+* pagination and sorting
+* GitHub Actions CI
+* deployment automation
+
+Deployment will be addressed separately using a cloud-based setup for the Spring Boot backend, PostgreSQL database and React frontend.
 
 ---
 
-## Environment Configuration
+## Project Goals
 
-Example backend configuration is provided in:
+This project is primarily a practical demonstration of:
 
-```text
-backend/src/main/resources/application.example.properties
-```
+* Java backend development
+* Spring Boot
+* REST API design
+* JPA / Hibernate
+* PostgreSQL
+* business logic
+* validation
+* exception handling
+* transactions
+* automated testing
+* code quality
+* frontend/backend integration
 
-Local configuration should not be committed.
-
-Frontend environment-specific configuration should be provided through Vite environment variables.
-
----
-
-## Project Status
-
-This project is a completed portfolio application demonstrating full-stack development with Java/Spring Boot and React/TypeScript.
-
-The application is intentionally kept within a focused scope rather than implementing a full commercial telecom billing platform.
-
-Future development may include authentication, role-based access control, external payment integration, monitoring and deployment automation.
+The project is developed as a learning and portfolio project with an emphasis on writing maintainable backend code and testing business behavior.
 
 ---
 

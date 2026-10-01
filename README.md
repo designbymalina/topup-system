@@ -391,6 +391,6 @@ The project is developed as a learning and portfolio application, with an emphas
 
 ## Author
 
-**Artur Malinowski — Software Engineer**
+**Artur Malinowski - Software Engineer**
 
 Developed as a practical full-stack Java/Spring Boot project with React and TypeScript.

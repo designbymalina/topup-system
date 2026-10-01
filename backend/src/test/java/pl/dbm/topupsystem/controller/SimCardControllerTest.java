@@ -16,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -36,15 +37,18 @@ class SimCardControllerTest {
   @MockitoBean private CustomerService customerService;
 
   @Test
-  void shouldReturnAllSimCards() throws Exception {
+  void shouldReturnPageOfSimCards() throws Exception {
     List<SimCard> simCards = List.of(new SimCard(), new SimCard());
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "id"));
 
-    when(simCardService.findAll()).thenReturn(simCards);
+    when(simCardService.findAll(any(Pageable.class)))
+        .thenReturn(new PageImpl<>(simCards, pageable, simCards.size()));
 
     mockMvc
-        .perform(get("/api/sim-cards"))
+        .perform(get("/api/sim-cards?page=0&size=10&sort=id,desc"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasSize(2)));
+        .andExpect(jsonPath("$.content", hasSize(2)))
+        .andExpect(jsonPath("$.totalElements").value(2));
   }
 
   @Test

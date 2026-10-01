@@ -28,6 +28,8 @@ class TopUpServiceTest {
 
   @InjectMocks private TopUpService topUpService;
 
+  @Mock private AuditLogService auditLogService;
+
   @Test
   void shouldTopUpSimCard() {
     SimCard simCard = new SimCard();

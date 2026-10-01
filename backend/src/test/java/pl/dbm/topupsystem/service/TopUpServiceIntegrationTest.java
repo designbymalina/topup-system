@@ -1,6 +1,7 @@
 package pl.dbm.topupsystem.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,25 +59,28 @@ class TopUpServiceIntegrationTest {
 
   @Test
   void shouldRollbackSimCardBalanceWhenTopUpSaveFails() {
-
     SimCard simCard = new SimCard();
 
     simCard.setPhoneNumber("+48501234567");
     simCard.setStatus(SimCardStatus.ACTIVE);
-    simCard.setBalance(new BigDecimal("50.00"));
+    simCard.setBalance(new BigDecimal("52.00"));
     simCard.setValidUntil(LocalDate.of(2027, 1, 31));
 
     SimCard savedSimCard = simCardRepository.save(simCard);
 
-    when(topUpRepository.save(any(TopUp.class))).thenThrow(new RuntimeException("Database error"));
-
     try {
-      topUpService.create(savedSimCard.getId(), new BigDecimal("30.00"));
-    } catch (RuntimeException ignored) {
+      when(topUpRepository.save(any(TopUp.class)))
+          .thenThrow(new RuntimeException("Database error"));
+
+      assertThrows(
+          RuntimeException.class,
+          () -> topUpService.create(savedSimCard.getId(), new BigDecimal("30.00")));
+
+      SimCard reloadedSimCard = simCardRepository.findById(savedSimCard.getId()).orElseThrow();
+
+      assertEquals(new BigDecimal("52.00"), reloadedSimCard.getBalance());
+    } finally {
+      simCardRepository.deleteById(savedSimCard.getId());
     }
-
-    SimCard reloadedSimCard = simCardRepository.findById(savedSimCard.getId()).orElseThrow();
-
-    assertEquals(new BigDecimal("50.00"), reloadedSimCard.getBalance());
   }
 }

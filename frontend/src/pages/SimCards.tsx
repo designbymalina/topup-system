@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+
+import { DEFAULT_PAGE_SIZE } from '../config/constants'
 
 import { deleteSimCard, getSimCards } from '../services/simCardService'
 import SimCardForm from '../form/SimCardForm'
 import Alert from '../components/Alert'
 import ConfirmModal from '../components/ConfirmModal'
 import Loading from '../components/Loading'
+import Pagination from '../components/Pagination'
 
 import type { SimCard } from '../types/SimCard'
 
@@ -22,15 +25,35 @@ function SimCards() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedSimCardId, setSelectedSimCardId] = useState<number | null>(null)
 
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+
   const navigate = useNavigate()
 
-  async function loadSimCards() {
+  const loadSimCards = useCallback(async () => {
     setLoading(true)
     setLoadError(null)
 
     try {
-      const data = await getSimCards()
-      setSimCards(data)
+      const data = await getSimCards(currentPage, DEFAULT_PAGE_SIZE)
+
+      if (data.totalPages === 0) {
+        setCurrentPage(0)
+        setSimCards([])
+        setTotalPages(0)
+        setTotalElements(0)
+        return
+      }
+
+      if (currentPage >= data.totalPages) {
+        setCurrentPage(data.totalPages - 1)
+        return
+      }
+
+      setSimCards(data.content)
+      setTotalPages(data.totalPages)
+      setTotalElements(data.totalElements)
     } catch (error) {
       console.error(error)
       setLoadError(
@@ -41,11 +64,11 @@ function SimCards() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage])
 
   useEffect(() => {
     void loadSimCards()
-  }, [])
+  }, [loadSimCards])
 
   async function handleSimCardSubmit() {
     const message = editingSimCard
@@ -222,6 +245,17 @@ function SimCards() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!loading && !showForm && totalPages > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={DEFAULT_PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          disabled={loading}
+        />
       )}
 
       {showDeleteModal && (

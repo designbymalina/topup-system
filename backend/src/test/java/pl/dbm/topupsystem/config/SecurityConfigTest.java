@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -33,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import pl.dbm.topupsystem.controller.AuthController;
 import pl.dbm.topupsystem.controller.SimCardController;
 import pl.dbm.topupsystem.controller.TopUpController;
+import pl.dbm.topupsystem.entity.SimCard;
 import pl.dbm.topupsystem.entity.TopUp;
 import pl.dbm.topupsystem.service.CustomerService;
 import pl.dbm.topupsystem.service.SimCardService;
@@ -60,12 +63,12 @@ class SecurityConfigTest {
   void shouldRejectUnauthenticatedRequestToAdminApi() throws Exception {
     mockMvc.perform(get("/api/sim-cards")).andExpect(status().isUnauthorized());
 
-    verify(simCardService, never()).findAll();
+    verify(simCardService, never()).findAll(any(Pageable.class));
   }
 
   @Test
   void shouldAllowAdminToAccessAdminApi() throws Exception {
-    when(simCardService.findAll()).thenReturn(List.of());
+    when(simCardService.findAll(any(Pageable.class))).thenReturn(Page.<SimCard>empty());
 
     mockMvc
         .perform(
@@ -80,7 +83,7 @@ class SecurityConfigTest {
             get("/api/sim-cards").with(jwt().jwt(token -> token.claim("roles", List.of("USER")))))
         .andExpect(status().isForbidden());
 
-    verify(simCardService, never()).findAll();
+    verify(simCardService, never()).findAll(any(Pageable.class));
   }
 
   @Test

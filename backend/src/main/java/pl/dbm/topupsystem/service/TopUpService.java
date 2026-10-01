@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.dbm.topupsystem.entity.SimCard;
 import pl.dbm.topupsystem.entity.TopUp;
+import pl.dbm.topupsystem.enums.AuditAction;
+import pl.dbm.topupsystem.enums.AuditEntityType;
 import pl.dbm.topupsystem.enums.SimCardStatus;
 import pl.dbm.topupsystem.exception.InactiveSimCardException;
 import pl.dbm.topupsystem.exception.SimCardNotFoundException;
@@ -17,10 +19,15 @@ import pl.dbm.topupsystem.repository.TopUpRepository;
 public class TopUpService {
   private final TopUpRepository topUpRepository;
   private final SimCardRepository simCardRepository;
+  private final AuditLogService auditLogService;
 
-  public TopUpService(TopUpRepository topUpRepository, SimCardRepository simCardRepository) {
+  public TopUpService(
+      TopUpRepository topUpRepository,
+      SimCardRepository simCardRepository,
+      AuditLogService auditLogService) {
     this.topUpRepository = topUpRepository;
     this.simCardRepository = simCardRepository;
+    this.auditLogService = auditLogService;
   }
 
   public List<TopUp> findBySimCardId(Long simCardId) {
@@ -44,7 +51,10 @@ public class TopUpService {
     topUp.setAmount(amount);
     topUp.setCreatedAt(LocalDateTime.now());
 
-    return topUpRepository.save(topUp);
+    TopUp savedTopUp = topUpRepository.save(topUp);
+    auditLogService.record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, savedTopUp.getId());
+
+    return savedTopUp;
   }
 
   @Transactional
@@ -71,12 +81,17 @@ public class TopUpService {
     topUp.setAmount(amount);
     topUp.setCreatedAt(LocalDateTime.now());
 
-    return topUpRepository.save(topUp);
+    TopUp savedTopUp = topUpRepository.save(topUp);
+    auditLogService.record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, savedTopUp.getId());
+
+    return savedTopUp;
   }
 
+  @Transactional
   public void delete(Long id) {
     TopUp topup = topUpRepository.findById(id).orElseThrow();
 
     topUpRepository.delete(topup);
+    auditLogService.record(AuditAction.DELETE, AuditEntityType.TOP_UP, id);
   }
 }

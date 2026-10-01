@@ -17,7 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import pl.dbm.topupsystem.entity.SimCard;
 import pl.dbm.topupsystem.enums.SimCardStatus;
 import pl.dbm.topupsystem.repository.SimCardRepository;
@@ -29,19 +32,20 @@ class SimCardServiceTest {
 
   @InjectMocks private SimCardService simCardService;
 
+  @Mock private AuditLogService auditLogService;
+
   @Test
-  void shouldReturnAllSimCards() {
+  void shouldReturnPageOfSimCards() {
     List<SimCard> simCards = List.of(new SimCard(), new SimCard());
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<SimCard> expectedPage = new PageImpl<>(simCards, pageable, simCards.size());
 
-    // Jeżeli repository zostanie wywołane, zwróć wartość.
-    when(simCardRepository.findAll(any(Sort.class))).thenReturn(simCards);
+    when(simCardRepository.findAll(pageable)).thenReturn(expectedPage);
 
-    List<SimCard> result = simCardService.findAll();
+    Page<SimCard> result = simCardService.findAll(pageable);
 
-    assertEquals(simCards, result);
-
-    // Sprawdź, czy repository rzeczywiście zostało wywołane w ten sposób.
-    verify(simCardRepository).findAll(any(Sort.class));
+    assertEquals(simCards, result.getContent());
+    verify(simCardRepository).findAll(pageable);
   }
 
   @Test

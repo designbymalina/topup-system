@@ -1,10 +1,13 @@
 package pl.dbm.topupsystem.service;
 
-import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.dbm.topupsystem.entity.SimCard;
+import pl.dbm.topupsystem.enums.AuditAction;
+import pl.dbm.topupsystem.enums.AuditEntityType;
 import pl.dbm.topupsystem.exception.DuplicatePhoneNumberException;
 import pl.dbm.topupsystem.repository.SimCardRepository;
 
@@ -12,26 +15,31 @@ import pl.dbm.topupsystem.repository.SimCardRepository;
 public class SimCardService {
 
   private final SimCardRepository simCardRepository;
+  private final AuditLogService auditLogService;
 
-  public SimCardService(SimCardRepository simCardRepository) {
+  public SimCardService(SimCardRepository simCardRepository, AuditLogService auditLogService) {
     this.simCardRepository = simCardRepository;
+    this.auditLogService = auditLogService;
   }
 
-  public List<SimCard> findAll() {
-    return simCardRepository.findAll(Sort.by("id").descending());
+  public Page<SimCard> findAll(Pageable pageable) {
+    return simCardRepository.findAll(pageable);
   }
 
+  @Transactional
   public SimCard save(SimCard simCard) {
-
     if (simCardRepository.existsByPhoneNumber(simCard.getPhoneNumber())) {
       throw new DuplicatePhoneNumberException("Numer telefonu jest już przypisany do karty SIM.");
     }
 
-    return simCardRepository.save(simCard);
+    SimCard savedSimCard = simCardRepository.save(simCard);
+    auditLogService.record(AuditAction.CREATE, AuditEntityType.SIM_CARD, savedSimCard.getId());
+
+    return savedSimCard;
   }
 
+  @Transactional
   public SimCard update(Long id, SimCard simCard) {
-
     SimCard existingSimCard = simCardRepository.findById(id).orElseThrow();
 
     Optional<SimCard> simCardWithPhoneNumber =
@@ -47,12 +55,17 @@ public class SimCardService {
     existingSimCard.setValidUntil(simCard.getValidUntil());
     existingSimCard.setCustomer(simCard.getCustomer());
 
-    return simCardRepository.save(existingSimCard);
+    SimCard updatedSimCard = simCardRepository.save(existingSimCard);
+    auditLogService.record(AuditAction.UPDATE, AuditEntityType.SIM_CARD, updatedSimCard.getId());
+
+    return updatedSimCard;
   }
 
+  @Transactional
   public void delete(Long id) {
     SimCard simCard = simCardRepository.findById(id).orElseThrow();
 
     simCardRepository.delete(simCard);
+    auditLogService.record(AuditAction.DELETE, AuditEntityType.SIM_CARD, id);
   }
 }

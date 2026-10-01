@@ -14,8 +14,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import pl.dbm.topupsystem.entity.SimCard;
 import pl.dbm.topupsystem.entity.TopUp;
+import pl.dbm.topupsystem.enums.AuditAction;
+import pl.dbm.topupsystem.enums.AuditEntityType;
 import pl.dbm.topupsystem.enums.SimCardStatus;
 import pl.dbm.topupsystem.repository.SimCardRepository;
 import pl.dbm.topupsystem.repository.TopUpRepository;
@@ -44,6 +47,7 @@ class TopUpServiceTest {
     TopUp savedTopUp = new TopUp();
     savedTopUp.setSimCard(simCard);
     savedTopUp.setAmount(new BigDecimal("30.00"));
+    ReflectionTestUtils.setField(savedTopUp, "id", 123L);
 
     when(topUpRepository.save(any(TopUp.class))).thenReturn(savedTopUp);
 
@@ -58,6 +62,8 @@ class TopUpServiceTest {
     verify(simCardRepository).save(simCard);
 
     verify(topUpRepository).save(any(TopUp.class));
+
+    verify(auditLogService).record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, 123L);
   }
 
   @Test
@@ -97,6 +103,7 @@ class TopUpServiceTest {
     TopUp savedTopUp = new TopUp();
     savedTopUp.setSimCard(simCard);
     savedTopUp.setAmount(new BigDecimal("30.00"));
+    ReflectionTestUtils.setField(savedTopUp, "id", 123L);
 
     when(topUpRepository.save(any(TopUp.class))).thenReturn(savedTopUp);
 
@@ -109,6 +116,9 @@ class TopUpServiceTest {
     assertEquals(simCard, result.getSimCard());
 
     verify(simCardRepository).save(simCard);
+
     verify(topUpRepository).save(any(TopUp.class));
+
+    verify(auditLogService).record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, 123L);
   }
 }

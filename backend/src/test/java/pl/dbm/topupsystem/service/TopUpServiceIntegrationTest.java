@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 import pl.dbm.topupsystem.entity.SimCard;
 import pl.dbm.topupsystem.entity.TopUp;
@@ -42,7 +43,12 @@ class TopUpServiceIntegrationTest {
     SimCard savedSimCard = simCardRepository.save(simCard);
 
     when(topUpRepository.save(any(TopUp.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+        .thenAnswer(
+            invocation -> {
+              TopUp topUp = invocation.getArgument(0);
+              ReflectionTestUtils.setField(topUp, "id", 123L);
+              return topUp;
+            });
 
     TopUp result = topUpService.create(savedSimCard.getId(), new BigDecimal("30.00"));
 

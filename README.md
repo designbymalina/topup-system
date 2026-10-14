@@ -52,6 +52,7 @@ Customer
 - Hibernate
 - Bean Validation
 - PostgreSQL
+- Apache Kafka for asynchronous top-up events
 - Maven
 
 ### Testing
@@ -75,6 +76,11 @@ Customer
 - Vite
 - React Router
 - Bootstrap
+
+### Local infrastructure
+
+- Docker
+- Docker Compose
 
 ---
 
@@ -105,6 +111,8 @@ Spring Boot
         ↓
 PostgreSQL
 ```
+
+Top-up events are published to Kafka after the database transaction commits. A Kafka consumer reads the `topup.created` topic and logs the received event. This demonstrates asynchronous event processing; the database transaction remains the source of truth for the top-up.
 
 The backend contains the application’s business logic. The frontend provides the administrative interface and public top-up form.
 
@@ -240,6 +248,12 @@ These changes are performed within the same transaction. If saving the top-up or
 
 Audit entries record relevant customer, SIM card and top-up operations.
 
+## Kafka
+
+The backend publishes a `TopUpCreatedEvent` after a top-up transaction commits. The event is sent to the `topup.created` Kafka topic. A consumer logs received events, for example with the message `Odebrano doładowanie`.
+
+When the backend runs directly from the IDE, it connects to Kafka at `localhost:9092`. When the application runs through the combined Docker Compose setup, the backend connects to Kafka at `kafka:19092` over the Compose network.
+
 ---
 
 ## Testing and Code Quality
@@ -294,6 +308,9 @@ topup-system/
 │   │   └── test/
 │   └── pom.xml
 │
+├── compose.yaml
+├── compose.kafka.yaml
+├── docker.env.example
 └── frontend/
     ├── src/
     │   ├── components/
@@ -307,6 +324,13 @@ topup-system/
 ---
 
 ## Running the Project
+
+The project can be run locally from the IDE or as a Docker Compose stack. These modes use separate PostgreSQL databases:
+
+- Local backend: PostgreSQL at `localhost:5432`.
+- Docker Compose backend: PostgreSQL in the `db` container, exposed to the host at `localhost:5433`.
+
+The Docker database is persisted in the `postgres_data` volume. It starts empty and is independent of the local PostgreSQL database. Creating or updating data in one database does not change the other.
 
 ### Backend
 
@@ -336,6 +360,8 @@ The backend runs by default at:
 http://localhost:8081
 ```
 
+When running the backend from the IDE, ensure PostgreSQL is available on port `5432` and Kafka is available on `localhost:9092`. Provide the administrator credentials and JWT secret through environment variables or the IDE run configuration. Do not commit real credentials or secrets.
+
 ### Frontend
 
 Requirements:
@@ -357,14 +383,51 @@ The frontend runs by default at:
 http://localhost:5173
 ```
 
+### Docker Compose
+
+Requirements:
+
+- Docker Desktop with the Linux container engine running
+- a local `docker.env` file based on `docker.env.example`
+
+Set the PostgreSQL, administrator and JWT values in `docker.env`. Keep this file private and do not commit it. Start the full application, including PostgreSQL and Kafka, from the project root:
+
+```powershell
+docker compose --env-file docker.env -f compose.yaml -f compose.kafka.yaml up -d --build
+```
+
+Check container status:
+
+```powershell
+docker compose --env-file docker.env -f compose.yaml -f compose.kafka.yaml ps
+```
+
+View backend logs, including Kafka consumer messages:
+
+```powershell
+docker compose --env-file docker.env -f compose.yaml -f compose.kafka.yaml logs -f backend
+```
+
+The application is available at `http://localhost:5173`; the API is at `http://localhost:8081`. PostgreSQL is exposed on host port `5433` for database tools such as pgAdmin. Connect to `localhost:5433` using the database name, user and password from `docker.env`.
+
+Stop and remove the containers while preserving the Docker database volume:
+
+```powershell
+docker compose --env-file docker.env -f compose.yaml -f compose.kafka.yaml down
+```
+
+Do not add `-v` if you want to keep the Docker database data. To start the stack again, run the `up -d` command above; omit `--build` unless the application code or Docker configuration has changed.
+
 ---
 
 ## Development Roadmap
 
-The project is developed incrementally. Possible future improvements include:
+The project is developed incrementally. Completed infrastructure and backend work includes Docker Compose, PostgreSQL in a container, Kafka top-up events and a Kafka consumer. Planned learning stages include:
 
-- GitHub Actions CI
-- deployment automation
+- AWS deployment, beginning with the existing Docker Compose application
+- moving the database to Amazon RDS and containers to managed AWS services
+- Kubernetes after the AWS deployment stage
+- GitHub Actions CI and deployment automation
 - a package catalog backed by the database
 - additional dashboard metrics backed by persisted data
 

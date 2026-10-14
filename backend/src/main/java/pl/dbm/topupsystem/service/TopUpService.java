@@ -3,6 +3,7 @@ package pl.dbm.topupsystem.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.dbm.topupsystem.entity.SimCard;
@@ -10,6 +11,7 @@ import pl.dbm.topupsystem.entity.TopUp;
 import pl.dbm.topupsystem.enums.AuditAction;
 import pl.dbm.topupsystem.enums.AuditEntityType;
 import pl.dbm.topupsystem.enums.SimCardStatus;
+import pl.dbm.topupsystem.event.TopUpCreatedEvent;
 import pl.dbm.topupsystem.exception.InactiveSimCardException;
 import pl.dbm.topupsystem.exception.SimCardNotFoundException;
 import pl.dbm.topupsystem.repository.SimCardRepository;
@@ -20,14 +22,17 @@ public class TopUpService {
   private final TopUpRepository topUpRepository;
   private final SimCardRepository simCardRepository;
   private final AuditLogService auditLogService;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   public TopUpService(
       TopUpRepository topUpRepository,
       SimCardRepository simCardRepository,
-      AuditLogService auditLogService) {
+      AuditLogService auditLogService,
+      ApplicationEventPublisher applicationEventPublisher) {
     this.topUpRepository = topUpRepository;
     this.simCardRepository = simCardRepository;
     this.auditLogService = auditLogService;
+    this.applicationEventPublisher = applicationEventPublisher;
   }
 
   public List<TopUp> findBySimCardId(Long simCardId) {
@@ -52,6 +57,15 @@ public class TopUpService {
     topUp.setCreatedAt(LocalDateTime.now());
 
     TopUp savedTopUp = topUpRepository.save(topUp);
+
+    applicationEventPublisher.publishEvent(
+        new TopUpCreatedEvent(
+            savedTopUp.getId(),
+            simCard.getId(),
+            simCard.getPhoneNumber(),
+            savedTopUp.getAmount(),
+            savedTopUp.getCreatedAt().toString()));
+
     auditLogService.record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, savedTopUp.getId());
 
     return savedTopUp;
@@ -82,6 +96,15 @@ public class TopUpService {
     topUp.setCreatedAt(LocalDateTime.now());
 
     TopUp savedTopUp = topUpRepository.save(topUp);
+
+    applicationEventPublisher.publishEvent(
+        new TopUpCreatedEvent(
+            savedTopUp.getId(),
+            simCard.getId(),
+            simCard.getPhoneNumber(),
+            savedTopUp.getAmount(),
+            savedTopUp.getCreatedAt().toString()));
+
     auditLogService.record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, savedTopUp.getId());
 
     return savedTopUp;

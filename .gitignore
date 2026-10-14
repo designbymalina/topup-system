@@ -41,6 +41,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+/docker.env
 
 # Local documents
 /__Dokumenty/

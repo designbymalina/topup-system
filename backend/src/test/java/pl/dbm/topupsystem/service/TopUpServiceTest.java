@@ -14,12 +14,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import pl.dbm.topupsystem.entity.SimCard;
 import pl.dbm.topupsystem.entity.TopUp;
 import pl.dbm.topupsystem.enums.AuditAction;
 import pl.dbm.topupsystem.enums.AuditEntityType;
 import pl.dbm.topupsystem.enums.SimCardStatus;
+import pl.dbm.topupsystem.event.TopUpCreatedEvent;
 import pl.dbm.topupsystem.repository.SimCardRepository;
 import pl.dbm.topupsystem.repository.TopUpRepository;
 
@@ -33,6 +35,8 @@ class TopUpServiceTest {
 
   @Mock private AuditLogService auditLogService;
 
+  @Mock private ApplicationEventPublisher applicationEventPublisher;
+
   @Test
   void shouldTopUpSimCard() {
     SimCard simCard = new SimCard();
@@ -45,11 +49,18 @@ class TopUpServiceTest {
     when(simCardRepository.findById(1L)).thenReturn(Optional.of(simCard));
 
     TopUp savedTopUp = new TopUp();
+    savedTopUp.setId(123L);
     savedTopUp.setSimCard(simCard);
     savedTopUp.setAmount(new BigDecimal("30.00"));
     ReflectionTestUtils.setField(savedTopUp, "id", 123L);
 
-    when(topUpRepository.save(any(TopUp.class))).thenReturn(savedTopUp);
+    when(topUpRepository.save(any(TopUp.class)))
+        .thenAnswer(
+            invocation -> {
+              TopUp topUp = invocation.getArgument(0);
+              topUp.setId(123L);
+              return topUp;
+            });
 
     TopUp result = topUpService.create(1L, new BigDecimal("30.00"));
 
@@ -64,6 +75,8 @@ class TopUpServiceTest {
     verify(topUpRepository).save(any(TopUp.class));
 
     verify(auditLogService).record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, 123L);
+
+    verify(applicationEventPublisher).publishEvent(any(TopUpCreatedEvent.class));
   }
 
   @Test
@@ -105,7 +118,13 @@ class TopUpServiceTest {
     savedTopUp.setAmount(new BigDecimal("30.00"));
     ReflectionTestUtils.setField(savedTopUp, "id", 123L);
 
-    when(topUpRepository.save(any(TopUp.class))).thenReturn(savedTopUp);
+    when(topUpRepository.save(any(TopUp.class)))
+        .thenAnswer(
+            invocation -> {
+              TopUp topUp = invocation.getArgument(0);
+              topUp.setId(123L);
+              return topUp;
+            });
 
     TopUp result = topUpService.createPublic("+48123123123", new BigDecimal("30.00"));
 
@@ -120,5 +139,7 @@ class TopUpServiceTest {
     verify(topUpRepository).save(any(TopUp.class));
 
     verify(auditLogService).record(AuditAction.TOP_UP, AuditEntityType.TOP_UP, 123L);
+
+    verify(applicationEventPublisher).publishEvent(any(TopUpCreatedEvent.class));
   }
 }
